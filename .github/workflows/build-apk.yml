@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'ABO_KARDOOM_ONE.zip'
+      - 'ABO_KARDOOM_COMPLETE_PROJECT.zip'
       - '.github/workflows/build-apk.yml'
 
 jobs:
@@ -44,7 +44,7 @@ jobs:
       - name: Extract game
         run: |
           mkdir extracted
-          unzip -q ABO_KARDOOM_ONE.zip -d extracted
+          unzip -q ABO_KARDOOM_COMPLETE_PROJECT.zip -d extracted
           PROJECT_DIR="$(dirname "$(find extracted -name project.godot -print -quit)")"
           test -f "$PROJECT_DIR/project.godot"
           test -f "$PROJECT_DIR/export_presets.cfg"
