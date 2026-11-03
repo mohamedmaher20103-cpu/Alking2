@@ -1,0 +1,67 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ABO_KARDOOM_ONE.zip'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Download Godot 4.7.2
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          unzip -q Godot_v4.7.2-stable_linux.x86_64.zip
+          chmod +x Godot_v4.7.2-stable_linux.x86_64
+
+      - name: Install Godot export templates
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
+          mkdir -p /tmp/godot-templates
+          unzip -q Godot_v4.7.2-stable_export_templates.tpz -d /tmp/godot-templates
+          mkdir -p ~/.local/share/godot/export_templates/4.7.2.stable
+          cp -a /tmp/godot-templates/templates/. ~/.local/share/godot/export_templates/4.7.2.stable/
+
+      - name: Extract game ZIP
+        run: |
+          mkdir extracted
+          unzip -q ABO_KARDOOM_ONE.zip -d extracted
+          PROJECT_DIR="$(dirname "$(find extracted -name project.godot -print -quit)")"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          test -n "$PROJECT_DIR"
+          test -f "$PROJECT_DIR/export_presets.cfg"
+
+      - name: Import game assets
+        run: |
+          ./Godot_v4.7.2-stable_linux.x86_64 --headless --editor --path "$PROJECT_DIR" --quit
+
+      - name: Export APK
+        run: |
+          mkdir -p "$PROJECT_DIR/build"
+          ./Godot_v4.7.2-stable_linux.x86_64 --headless --path "$PROJECT_DIR" --export-release "Android" "$PROJECT_DIR/build/AboKardoom_TheLastKing.apk"
+          test -f "$PROJECT_DIR/build/AboKardoom_TheLastKing.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AboKardoom-Android-APK
+          path: ${{ env.PROJECT_DIR }}/build/AboKardoom_TheLastKing.apk
