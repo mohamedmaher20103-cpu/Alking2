@@ -64,6 +64,12 @@ jobs:
         run: |
           ./Godot_v4.7.2-stable_linux.x86_64 --headless --editor --path "$PROJECT_DIR" --quit
 
+      - name: Create Android debug keystore
+        run: |
+          mkdir -p "$HOME/.android"
+          keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
+          sed -i "s|^keystore/debug=.*|keystore/debug=\"$HOME/.android/debug.keystore\"|" "$PROJECT_DIR/export_presets.cfg"
+
       - name: Export APK
         run: |
           APK_DIR="$GITHUB_WORKSPACE/$PROJECT_DIR/build"
